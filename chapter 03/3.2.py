@@ -31,17 +31,18 @@ def batch_generator(batch_size, x_data, y_data):
         batch = indices[i:min(i+batch_size, num_examples)]
         yield x_data[batch], y_data[batch]
 
-w = torch.randn(num_features)
-b = torch.zeros(1)
+w = torch.randn(num_features, requires_grad=True)
+b = torch.zeros(1, requires_grad=True)
 
 for epoch in range(num_epochs):
     for X, y in batch_generator(batch_size, x_data, y_data):
-        # 每计算梯度后计算图就会被销毁
-        w = torch.autograd.Variable(w, requires_grad=True)
-        b = torch.autograd.Variable(b, requires_grad=True)
         loss = ((X.matmul(w) + b - y) ** 2 / 2)
         loss.backward(gradient=torch.ones(batch_size))
-        w = w - learning_rate * w.grad / batch_size
-        b = b - learning_rate * b.grad / batch_size
+        # 更新的是data
+        w.data = w.data - learning_rate * w.grad / batch_size
+        b.data = b.data - learning_rate * b.grad / batch_size
+        # 梯度清0
+        w.grad.data.zero_()
+        b.grad.data.zero_()
     loss = ((x_data.matmul(w) + b - y_data) ** 2 / 2)
     print("epoch %d, loss %f" % (epoch + 1, loss.mean()))
